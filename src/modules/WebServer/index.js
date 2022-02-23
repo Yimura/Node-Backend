@@ -1,46 +1,66 @@
-import EventModule from './structures/EventModule.js'
-import WebServer from './structures/web/Server.js'
+import EventEmitter from 'events';
+import { Server } from 'http';
+import { ModuleBuilder } from 'waffle-manager';
+import Constants, { SortFunction, WebServerConfig } from './util/Constants.js';
 
-export default class Web extends EventModule {
-    _server = new WebServer(this.config.webserver);
+export const ModuleConstants = Constants;
 
-    /**
-     * @param {Main} main The program entrypoint class
-     */
-    constructor(main) {
-        super(main);
+export const ModuleInfo = new ModuleBuilder('webServer');
 
-        this.register(Web, {
-            name: 'web'
-        });
+export const ModuleInstance = class WebServer extends EventEmitter {
+    constructor() {
+        super();
+
+        this._handlers = [];
+        this._config = WebServerConfig;
+        this._s = new Server();
     }
 
-    _onError(err) {
-        this.log.error('WEB', 'Webserver encountered an error:', err);
+    get host() {
+        return this._config.host;
     }
 
-    _onReady() {
-        this.log.info('WEB', 'Webserver is ready.');
-    }
-
-    /**
-     * Forward the request from the webserver so it can be handle externally
-     * @param {Request} request
-     */
-    _onRequest(request) {
-        this.emit('request', request);
+    get port() {
+        return this._config.port;
     }
 
     /**
-     * @returns {boolean} Return true if the init succeeded, false to exit the entire app
+     * Adds a request handler for the given path.
+     * @param {string} path The path to be handle by said path handler.
+     * @param {function} handler The callback to the function handling the request.
      */
+    addPathHandler(path, handler) {
+        if (!path instanceof String)
+            throw new Error('Path is not of type String.');
+        if (typeof handler !== 'function')
+            throw new Error('Handler is not a function.');
+
+        this._handlers.push([path, handler]);
+        this._handlers.sort((a, b) => b[0].length - a[0].length);
+    }
+
+    cleanup() {
+        this.close();
+    }
+
     init() {
-        this.log.info('WEB', 'Starting Webserver...');
-
-        this._server.on('ready', this._onReady.bind(this));
-        this._server.on('request', this._onRequest.bind(this));
-        this._server.start();
+        this._s.on('listening', this.onListening.bind(this));
+        this._s.on('request', this.onRequest.bind(this));
+        this._s.listen(this.port, this.host);
 
         return true;
     }
-}
+
+    onListening() {
+        console.log('Listening...');
+    }
+
+    /**
+     * "request" event handler
+     * @param {http.IncomingMessage} request
+     * @param {http.ServerResponse} response
+     */
+    onRequest(request, response) {
+        response.end('Received HTTP Request');
+    }
+};

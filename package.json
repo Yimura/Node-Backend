@@ -1,16 +1,22 @@
 {
   "name": "node-backend",
-  "version": "0.1.0",
-  "description": "",
+  "version": "0.2.0",
+  "description": "NodeJS REST API backend template using waffle-manager singleton behaviour",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "docker-compose up --build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Yimura/Node-Backend.git"
   },
+  "keywords": [
+    "backend",
+    "rest",
+    "waffle-manager",
+    "modular"
+  ],
   "author": "yimura",
   "license": "MIT",
   "bugs": {
@@ -18,6 +24,6 @@
   },
   "homepage": "https://github.com/Yimura/Node-Backend#readme",
   "dependencies": {
-    "@yimura/import-dir": "^0.1.12"
+    "waffle-manager": "^0.1.1"
   }
 }
