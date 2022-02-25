@@ -36,7 +36,7 @@ export const ModuleInstance = class WebServer extends EventEmitter {
             throw new Error('Handler is not a function.');
 
         this._handlers.push([path, handler]);
-        this._handlers.sort((a, b) => b[0].length - a[0].length);
+        this._handlers.sort(SortFunction);
     }
 
     cleanup() {
@@ -52,7 +52,7 @@ export const ModuleInstance = class WebServer extends EventEmitter {
     }
 
     onListening() {
-        console.log('Listening...');
+
     }
 
     /**
@@ -61,6 +61,9 @@ export const ModuleInstance = class WebServer extends EventEmitter {
      * @param {http.ServerResponse} response
      */
     onRequest(request, response) {
+        if (this.handlePreflight(request, response))
+            return;
+
         response.end('Received HTTP Request');
     }
 };
