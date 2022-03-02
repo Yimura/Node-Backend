@@ -1,5 +1,7 @@
-import fs from 'fs/promises';
+import { access } from 'fs/promises';
+import { constants, createReadStream } from 'fs';
 import { resolve as resolvePath } from 'path';
+import mime from 'mime/lite.js'
 import Modules, { ModuleBuilder } from 'waffle-manager';
 
 export const ModuleInfo = new ModuleBuilder('staticServer')
@@ -23,7 +25,7 @@ export const ModuleInstance = class StaticServe {
      */
     async _isReadable(filePath) {
         try {
-            return await fs.access(filePath, fs.constants.R_OK) == undefined;
+            return await access(filePath, constants.R_OK) == undefined;
         } catch (error) {
             return false;
         }
@@ -36,15 +38,16 @@ export const ModuleInstance = class StaticServe {
      */
     async onRequest(request) {
         const pathName = request.url.pathname;
-        const path = resolvePath(`./frontend${pathName == '' ? '/index.html' : pathName}`);
+        const path = resolvePath(`./frontend${pathName.endsWith('/') ? '/index.html' : pathName}`);
         if (!await this._isReadable(path))
             return request.clientError(404, `Unable to find requested resource: ${pathName}`);
 
         const mimeType = mime.getType(path);
-        if (!mimeType) return request.serverError(501, 'Unable to determine mime type.');
+        if (!mimeType)
+            return request.serverError(501, 'Unable to determine mime type.');
 
         request.res.writeHead(200, { 'Content-Type': mimeType });
-        fs.createReadStream(path).pipe(request.res);
+        createReadStream(path).pipe(request.res);
 
         return true;
     }

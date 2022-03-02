@@ -92,7 +92,7 @@ export const ModuleInstance = class WebServer extends EventEmitter {
             if (httpRequest.path.startsWith(path)) {
                 await handler(httpRequest);
 
-                break;
+                return;
             }
         }
 
