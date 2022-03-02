@@ -28,22 +28,19 @@ export class Logger {
         if (!level in LogLevel)
             throw new TypeError('Invalid logging level used!');
 
-        let logValue = show_time ? `[${new Date().toLocaleTimeString()}] ` : '';
-
+        const date = new Date();
+        const time =`[${date.toLocaleTimeString()}] `;
         if (LogLevels.indexOf(this._logLevel) <= LogLevels.indexOf(level)) {
-            const color, reset = LogLevelColors[level];
+            const [ color, reset ] = LogLevelColors[level];
 
-            const msg = `${logValue}${color}[${name.toUpperCase()}/${level}]${reset} ${message}`;
+            const msg = `${time}${color}[${name.toUpperCase()}/${level}]${reset} ${message}`;
 
             console.log(msg);
             if (data) console.log(data);
         }
 
-        const date = new Date();
 
-        let msg = `${logValue}[${name.toUpperCase()}/${level}] ${message}\n`;
-        if (data) msg += `${util.format(data)}\n`;
-
+        const msg = `${time}[${name.toUpperCase()}/${level}] ${message}\n${data ? `${util.format(data)}\n` : ''}`;
         fs.appendFile(
             `${process.cwd()}/log/${date.getUTCFullYear()}-${date.getUTCMonth()+1}-${date.getUTCDate()}-${level.toLowerCase()}.log`,
             msg,
@@ -54,7 +51,7 @@ export class Logger {
     static setLogLevel(level){
         level = level.toUpperCase();
         if (level in LogLevel) {
-            log._logLevel = level
+            Logger._logLevel = level
         }
         else {
             throw new TypeError('Invalid logging level used!');
@@ -63,23 +60,23 @@ export class Logger {
     }
 
     static info(...args) {
-        log._log('info', ...args);
+        Logger._log('info', ...args);
     }
 
     static verbose(...args) {
-        log._log('verbose',...args);
+        Logger._log('verbose',...args);
     }
 
     static warn(...args) {
-        log._log('warning', ...args);
+        Logger._log('warning', ...args);
     }
 
     static error(...args) {
-        log._log('error', ...args);
+        Logger._log('error', ...args);
     }
 
     static critical(...args) {
-        log._log('critical', ...args);
+        Logger._log('critical', ...args);
     }
 }
 
