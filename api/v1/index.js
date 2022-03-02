@@ -14,6 +14,6 @@ export default class Index extends Modules.rest.classes.Route {
      * @param {HTTPRequest} request 
      */
     get(request) {
-        return request.success('Yey, you reached the index of API.');
+        return request.accept('Yey, you reached the index of API.');
     }
 }

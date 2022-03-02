@@ -1,4 +1,5 @@
 import http from 'http';
+import { HttpResponseCode } from '../util/Constants.js';
 
 export class HTTPRequest {
     /**
@@ -68,7 +69,7 @@ export class HTTPRequest {
      * @param {number} code HTTP response code between 200 and 299.
      * @returns {boolean}
      */
-    success(body, code = 200) {
+    accept(body, code = 200) {
         if (code < 200 || code > 299)
             throw new RangeError('The HTTP response code for HTTPRequest#success needs to be between 200 and 299.');
 
@@ -80,31 +81,18 @@ export class HTTPRequest {
 
     /**
      * Indicate that an error occured because a client made an invalid request.
-     * @param {number} code HTTP response code between 400 and 499.
-     * @param {string|object} customBody
+     * @param {number} code HTTP response code between 400 and 599.
+     * @param {string|object} [customBody = null]
      */
-    clientError(code, customBody = null) {
-        if (code < 400 || code > 499)
-            throw new RangeError('The HTTP response code for HTTPRequest#success needs to be between 400 and 499.');
-
+    reject(code, customBody = null) {
         this.res.writeHead(code, {});
-        this.res.end(customBody);
+        if (!customBody)
+        {
+            const { status, message } = HttpResponseCode[code];
+            this.res.end(`<pre>${status}<br><br>${message}</pre>`);
 
-        return true;
-    }
-
-    /**
-     * Indicate that an error occured server side while handling the client request.
-     * @param {number} code HTTP Response code between 500 and 599.
-     * @param {string|object} customBody
-     */
-    serverError(code, customBody = null) {
-        if (code < 500 || code > 599)
-            throw new RangeError('The HTTP response code for HTTPRequest#success needs to be between 500 and 599.');
-
-        this.res.writeHead(code, {});
-        this.res.end(customBody);
-
-        return true;
+            return true;
+        }
+        return this.res.end(customBody);
     }
 }

@@ -65,33 +65,23 @@ export const ModuleInstance = class RESTAPI {
      */
     async requestHandler(request) {
         const path = request.url.pathname;
-        if (!this._cache.has(path)) {
-            request.res.writeHead(404, { 'Content-Type': 'text/html' });
-            request.res.end('<pre>404 - Not Found<br><br>The requested URL was not found on this server.</pre>');
+        if (!this._cache.has(path))
+            return request.reject(404);
 
-            return;
-        }
         const instance = this.cloneInstance(
             this._cache.get(path)
         );
 
         const method = request.method.toLowerCase();
-        if (typeof instance[method] !== 'function') {
-            request.res.writeHead(405, { 'Content-Type': 'text/html' });
-            request.res.end('<pre>405 - Method Not Allowed<br><br>The given URL exists but an invalid request method was used.</pre>');
-
-            return;
-        }
+        if (typeof instance[method] !== 'function')
+            return request.reject(405);
 
         try {
-            await instance[method](request);
+            return instance[method](request);
         } catch (err) {
-            request.res.writeHead(500, { 'Content-Type': 'text/plain' });
-            request.res.end("An error occured, please contact an administrator if the problem persists.");
-
             Logger.error('REST', `An error occured on "${path}":`, err.stack);
+            
+            return request.reject(500);
         }
-
-        return true;
     }
 }

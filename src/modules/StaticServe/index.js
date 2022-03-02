@@ -40,11 +40,11 @@ export const ModuleInstance = class StaticServe {
         const pathName = request.url.pathname;
         const path = resolvePath(`./frontend${pathName.endsWith('/') ? '/index.html' : pathName}`);
         if (!await this._isReadable(path))
-            return request.clientError(404, `Unable to find requested resource: ${pathName}`);
+            return request.reject(404);
 
         const mimeType = mime.getType(path);
         if (!mimeType)
-            return request.serverError(501, 'Unable to determine mime type.');
+            return request.reject(500);
 
         request.res.writeHead(200, { 'Content-Type': mimeType });
         createReadStream(path).pipe(request.res);
