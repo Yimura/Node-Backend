@@ -23,6 +23,13 @@ export class HTTPRequest {
     /**
      * @returns {string}
      */
+    get method() {
+        return this._req.method.toUpperCase();
+    }
+
+    /**
+     * @returns {string}
+     */
     get path() {
         return this._url.pathname;
     }
