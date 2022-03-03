@@ -7,6 +7,8 @@ export class HTTPRequest {
      * @param {http.ServerResponse} response
      */
     constructor(request, response) {
+        this._headers = {};
+
         this._req = request;
         this._res = response;
 
@@ -64,6 +66,36 @@ export class HTTPRequest {
     }
 
     /**
+     * Retrieve request headers
+     * @param {string} name Header name
+     * @returns {string} The value the header holds
+     */
+    getHeader(name) {
+        return this.req.headers[name];
+    }
+
+    /**
+     * Set the value
+     * @param {string} name The header name
+     * @param {string} value The header value
+     */
+    setHeader(name, value) {
+        this._headers[name] = value;
+    }
+
+    /**
+     * Merge a header object or overwrite existing header object
+     * @param {object} headers Headers to merge with existing headers or assign as new headers
+     * @param {boolean} merge True to merge with existing headers, false to overwrite
+     */
+    setHeaders(headers, merge = true) {
+        if (merge)
+            Object.assign(this._headers, headers);
+        else
+            this._headers = headers;
+    }
+
+    /**
      * Use this method to signal a successful handling of a request, HTTP response codes within the 200 range can be used.
      * @param {string|object} body Body to send as a response, can be a string or a JS Object.
      * @param {number} code HTTP response code between 200 and 299.
@@ -73,7 +105,7 @@ export class HTTPRequest {
         if (code < 200 || code > 299)
             throw new RangeError('The HTTP response code for HTTPRequest#success needs to be between 200 and 299.');
 
-        this.res.writeHead(code, {});
+        this.res.writeHead(code, this._headers);
         this.res.end(body);
 
         return true;
@@ -85,7 +117,7 @@ export class HTTPRequest {
      * @param {string|object} [customBody = null]
      */
     reject(code, customBody = null) {
-        this.res.writeHead(code, {});
+        this.res.writeHead(code, this._headers);
         if (!customBody)
         {
             const { status, message } = HttpResponseCode[code];

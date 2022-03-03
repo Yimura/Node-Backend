@@ -55,12 +55,17 @@ export const ModuleInstance = class WebServer extends EventEmitter {
         this.close();
     }
 
-    handlePreflight(req, res) {
-        if (req.method.toUpperCase() !== 'OPTIONS')
+    /**
+     *
+     * @param {HTTPRequest} httpRequest
+     * @returns {boolean} Returns true if the request was a preflight request, false otherwise
+     */
+    handlePreflight(httpRequest) {
+        httpRequest.setHeaders(this._defaultHeaders, false);
+        if (httpRequest !== 'OPTIONS')
             return false;
-        res.writeHead(204, this._defaultHeaders);
-        res.end();
 
+        httpRequest.accept('', 204);
         return true;
     }
 
@@ -84,10 +89,10 @@ export const ModuleInstance = class WebServer extends EventEmitter {
      * @param {http.ServerResponse} response
      */
     async onRequest(request, response) {
-        if (this.handlePreflight(request, response))
+        const httpRequest = new HTTPRequest(request, response);
+        if (this.handlePreflight(httpRequest))
             return;
 
-        const httpRequest = new HTTPRequest(request, response);
         for (const [ path, handler ] of this._handlers) {
             if (httpRequest.path.startsWith(path)) {
                 await handler(httpRequest);
