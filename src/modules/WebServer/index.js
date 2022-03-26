@@ -2,6 +2,7 @@ import EventEmitter from 'events';
 import http, { Server } from 'http';
 import { ModuleBuilder } from 'waffle-manager';
 import { Logger } from '@/src/util/Logger.js';
+import { loadJson } from '@/src/util/Util.js';
 import { HTTPRequest } from './structures/HTTPRequest.js';
 import Constants, { DefaultAllowedHeaders, DefaultAllowedMethods, SortFunction, WebServerConfig } from './util/Constants.js';
 
@@ -13,9 +14,9 @@ export const ModuleInstance = class WebServer extends EventEmitter {
     constructor() {
         super();
 
+        this._config = {}
         this._defaultHeaders = {};
         this._handlers = [];
-        this._config = WebServerConfig;
         this._s = new Server();
     }
 
@@ -44,15 +45,28 @@ export const ModuleInstance = class WebServer extends EventEmitter {
         Logger.info('WEB_SERVER', `Registered new handler for path "${path}"`);
     }
 
+    /**
+     *
+     * @param {HTTPRequest} httpRequest
+     * @returns
+     */
+    applyDynamicHeaders(httpRequest) {
+        const reqOrigin = httpRequest.getHeader('origin');
+        const origin = this._config.allowed_origins.find(origin => origin == reqOrigin);
+
+        return Object.assign({}, this._defaultHeaders, { 'Access-Control-Allow-Origin': origin ?? null });
+    }
+
     buildHeaders() {
-        this._defaultHeaders = {
-            'Access-Control-Allow-Headers': DefaultAllowedHeaders.join(','),
+        const allowedHeaders = this._config.allowed_headers.concat(DefaultAllowedHeaders);
+        return {
+            'Access-Control-Allow-Headers': allowedHeaders.join(','),
             'Access-Control-Allow-Methods': DefaultAllowedMethods.join(',')
         };
     }
 
     cleanup() {
-        this.close();
+        this._s.close();
     }
 
     /**
@@ -61,7 +75,9 @@ export const ModuleInstance = class WebServer extends EventEmitter {
      * @returns {boolean} Returns true if the request was a preflight request, false otherwise
      */
     handlePreflight(httpRequest) {
-        httpRequest.setHeaders(this._defaultHeaders, false);
+        const headers = this.applyDynamicHeaders(httpRequest);
+
+        httpRequest.setHeaders(headers, false);
         if (httpRequest !== 'OPTIONS')
             return false;
 
@@ -69,8 +85,17 @@ export const ModuleInstance = class WebServer extends EventEmitter {
         return true;
     }
 
-    init() {
-        this.buildHeaders();
+    /**
+     * @returns {WebServerConfig}
+     */
+    loadConfig() {
+        const { web_server } = loadJson('/data/config.json');
+        return Object.assign({}, WebServerConfig, web_server);
+    }
+
+    async init() {
+        this._config = this.loadConfig();
+        this._defaultHeaders = this.buildHeaders();
 
         this._s.on('listening', this.onListening.bind(this));
         this._s.on('request', this.onRequest.bind(this));

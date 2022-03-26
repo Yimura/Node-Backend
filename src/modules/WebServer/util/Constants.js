@@ -66,6 +66,8 @@ export const HttpResponseCode = {
 };
 
 export const WebServerConfig = {
+    allowed_headers: [],
+    allowed_origins: [],
     host: '0.0.0.0',
     port: 8080
 };
